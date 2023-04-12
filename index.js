@@ -1,8 +1,10 @@
+
+const jwt = require('jsonwebtoken');
 const express = require('express');
 const app = express();
 const port  = 4000
 
-let dbUser = [
+let dbUsers = [
   { 
     username: "alyaa",
     password: "12345",
@@ -12,50 +14,54 @@ let dbUser = [
     username: "apihazman",
     password: "66666",
     email: "apiz@gmail.com"
+  },
+
+  {
+    username:"alyaazaf",
+    password: "1234567",
+    email: "yaya@gmail.com"
   }
 ]
-//anable json body parsing
 app.use(express.json());
 
-//create GET route
-app.post('/login', (req,res) => {
-  //get the username and password from req
-  //const { username, password } = req.body;//
+app.post('/login',(req, res) => {
   let data = req.body
-  res.send(
-    login(
+  //res.send(
+    const user = login(
       data.username,
       data.password
     )
-  );
-    });
 
-    app.use(express.json());
-  //find usser in the database
- // const user = dbUser.find(user => user.username === username && user.password === password);
-app.post('/register', (req, res)=>{
-    let  data = req.body
+res.send( generateToken(user))
+});
+
+  app.use(express.json());
+
+  app.post('/register', (req,res) => {
+    let data = req.body
     res.send(
       register(
-        data.username,
-        data.password,
-        data.email
-      )
+      data.username,
+      data.password,
+      data.name,
+      data.email
+    )
     );
-      });
-
-      app.get('/', (req, res) => {
-        res.send('Hello World!')
-      })
-      
-      app.get('/bye', (req, res) => {
-          res.send('Bye Bye World!')
-        })
-
-
-app.listen(port,() => {
-  console.log(`Example app listening on port ${port}`)
 });
+  
+app.get('/hello',verifyToken, (req, res) => {
+  console.log(req.user)
+  res.send('Hello World!')
+})
+
+app.get('/bye', (req, res) => {
+    res.send('bye bye World!')
+  })
+
+  app.listen(port,() => {
+    console.log('Example app listening on port ${port}');
+  });
+  
 
 //creat a post route for user to log in
 app.post('/login', (req, res) => {
@@ -63,7 +69,7 @@ app.post('/login', (req, res) => {
   const { username, password } =req.body;
 
   // find the username in the database
-  const user = dbUser.find(user => user.username === uesrname && user.password === password);
+  const user = dbUsers.find(user => user.username === username && user.password === password);
 
   // if
   if (user) {
@@ -75,36 +81,63 @@ app.post('/login', (req, res) => {
 })
 
 
-function login (username, password){
+
+function login(username, password){
   console.log("someone try to login with", username, password)
-  let matched =dbUser.find(element =>
-    element.username == username
-)
-if(matched){
-    if(matched.password == password){
-        return matched
-    }else{
-        return "Password not matched"
-    }
-}
-else {
-  return "Username not found"
-}
+  let matched = dbUsers.find(element =>
+      element.username == username
+  )
+  if(matched){
+      if(matched.password == password){
+          return matched
+      }else{
+          return "Password not matched"
+      }
+  }else{
+      return "Username not found"
+  }
+  }
+
+  function register(newusername, newpassword, newname, newemail){
+
+    dbUsers.find(element => {
+      console.log(element)
+    
+    })
+
+    dbUsers.push({
+        username : newusername,
+        password : newpassword,
+        name : newname,
+        email : newemail,
+    })
+
+    return "Register Succesfully"
 }
 
-function register(
-  newusername,
-  newpassword,
-  newemail
-){
+// to generate JWT Token
 
-dbUser.find(element => {
-  console.log(element)
-})
-dbUser.push({
-  username : newusername,
-  password : newpassword,
-  email : newemail,
-})
- return "New account has been created"
+function generateToken(userProfile) {
+ return jwt.sign(
+  userProfile,
+ 'secret',
+ { expiresIn: 60 * 60 });
+}
+
+//to verify jwt token
+function verifyToken(req, res, next) {
+  let header = req.headers.authorization
+  console.log(header);
+
+  let token = header.split(' ')[1]
+
+  jwt.verify(token, 'secret', function(err, decoded) {
+   if(err) {
+    res.send("Invalid Token")
+   }
+  
+    req.user = decoded
+
+    next()
+  });
 }
