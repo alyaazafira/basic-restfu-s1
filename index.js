@@ -118,9 +118,9 @@ function login(username, password){
 // to generate JWT Token
 
 function generateToken(userProfile) {
- return jwt.sign(
+ return jwt.sign({
   userProfile,
- 'secret',
+ }, 'secret',
  { expiresIn: 60 * 60 });
 }
 
